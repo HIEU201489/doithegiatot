@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Nạp thẻ thử</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:700px; margin:30px auto; padding:10px; }
+    input, select { padding:8px; width:100%; margin:6px 0; box-sizing:border-box; }
+    button { padding:10px 16px; }
+    .log { white-space:pre-wrap; background:#f7f7f7; padding:10px; border-radius:6px; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h2>Nạp thẻ (Demo)</h2>
+  <label>Loại thẻ</label>
+  <select id="cardType">
+    <option value="VIETTEL">VIETTEL</option>
+    <option value="VINAPHONE">VINAPHONE</option>
+    <option value="MOBIFONE">MOBIFONE</option>
+    <option value="GATE">GATE</option>
+    <option value="ZING">ZING</option>
+  </select>
+
+  <label>Mệnh giá</label>
+  <select id="amount">
+    <option value="10000">10.000</option>
+    <option value="20000">20.000</option>
+    <option value="50000">50.000</option>
+    <option value="100000">100.000</option>
+  </select>
+
+  <label>PIN (mã thẻ)</label>
+  <input id="pin" placeholder="Nhập mã thẻ (PIN)" />
+
+  <label>Số seri</label>
+  <input id="seri" placeholder="Nhập số seri" />
+
+  <label>Mã yêu cầu (RequestId — đặt để dễ tra cứu)</label>
+  <input id="requestId" placeholder="ví dụ: order_12345" />
+
+  <button id="sendBtn">Gửi thẻ</button>
+
+  <div class="log" id="log">Kết quả sẽ hiện ở đây...</div>
+
+<script>
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const cardType = document.getElementById('cardType').value;
+  const amount = Number(document.getElementById('amount').value);
+  const pin = document.getElementById('pin').value.trim();
+  const seri = document.getElementById('seri').value.trim();
+  const requestId = document.getElementById('requestId').value.trim() || ('req_' + Date.now());
+
+  const log = (t) => document.getElementById('log').textContent = t;
+
+  if (!pin || !seri) {
+    log('Vui lòng nhập đầy đủ PIN và Số seri.');
+    return;
+  }
+
+  const payload = { CardType: cardType, Amount: amount, Pin: pin, Seri: seri, RequestId: requestId };
+
+  log('Đang gửi...');
+
+  try {
+    // Gọi server của bạn (proxy) để server chứa APIKey gọi doithegiatot
+    const res = await fetch('/api/send-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    log('Kết quả từ server:\n' + JSON.stringify(data, null, 2) + '\n\nLưu ý: Kết quả xử lý thực tế có thể chưa hoàn tất — kiểm tra trạng thái hoặc chờ webhook.');
+  } catch (err) {
+    log('Lỗi khi gửi: ' + err.message);
+  }
+});
+</script>
+</body>
+</html>
