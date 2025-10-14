@@ -1,0 +1,177 @@
+# Creating the callback web project files (Node.js + Express) without the UI (placeholder API key).
+# This will create a zip file at /mnt/data/doithe-callback-web.zip for you to download.
+
+import os, textwrap, json, shutil, zipfile, pathlib
+
+root = "/mnt/data/doithe-callback-web"
+if os.path.exists(root):
+    shutil.rmtree(root)
+os.makedirs(root, exist_ok=True)
+
+files = {
+    "package.json": json.dumps({
+      "name": "doithe-callback-web",
+      "version": "1.0.0",
+      "main": "server.js",
+      "scripts": { "start": "node server.js" },
+      "dependencies": {
+        "express": "^4.18.2",
+        "body-parser": "^1.20.2",
+        "cors": "^2.8.5",
+        "better-sqlite3": "^8.5.0",
+        "dotenv": "^16.0.3"
+      },
+      "engines": { "node": ">=16" }
+    }, indent=2),
+    
+    ".env.example": textwrap.dedent("""\
+        PORT=10000
+        DOITHE_APIKEY=YOUR_API_KEY
+        ALLOW_ORIGIN=*
+        LOG_DB_PATH=./data.db
+    """),
+
+    "README.md": textwrap.dedent("""\
+        # doithe-callback-web (no UI)
+        
+        Simple Node.js + Express webhook receiver for doithegiatot.com callbacks.
+        - Endpoint: POST /webhook/card
+        - Verifies Hash = MD5(APIKey + Pin + Seri)
+        - Stores callback records in SQLite (better-sqlite3)
+        
+        ## Quick start (local)
+        1. Copy `.env.example` to `.env` and set DOITHE_APIKEY.
+        2. npm install
+        3. npm start
+        4. Use ngrok if you need HTTPS for local testing: `ngrok http 10000`
+        
+        ## Deploy
+        Deploy to Render/Replit/Railway. Set DOITHE_APIKEY as environment variable in the platform.
+    """),
+
+    "db.js": textwrap.dedent("""\
+        const Database = require('better-sqlite3');
+        const fs = require('fs');
+        const path = require('path');
+        
+        const DB_PATH = process.env.LOG_DB_PATH || path.join(__dirname, 'data.db');
+        if (!fs.existsSync(DB_PATH)) {
+          const dir = path.dirname(DB_PATH);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        }
+        const db = new Database(DB_PATH);
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS callbacks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            taskId TEXT,
+            pin TEXT,
+            seri TEXT,
+            cardValue INTEGER,
+            success INTEGER,
+            wrongPrice INTEGER,
+            hash TEXT,
+            requestid TEXT,
+            amount INTEGER,
+            declared_value INTEGER,
+            raw TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        const insertStmt = db.prepare(`INSERT INTO callbacks
+        (taskId,pin,seri,cardValue,success,wrongPrice,hash,requestid,amount,declared_value,raw)
+        VALUES (@taskId,@pin,@seri,@cardValue,@success,@wrongPrice,@hash,@requestid,@amount,@declared_value,@raw)`);
+        module.exports = {
+          insert: (obj) => insertStmt.run(obj),
+          all: () => db.prepare('SELECT * FROM callbacks ORDER BY created_at DESC LIMIT 200').all()
+        };
+    """),
+
+    "server.js": textwrap.dedent("""\
+        require('dotenv').config();
+        const express = require('express');
+        const bodyParser = require('body-parser');
+        const crypto = require('crypto');
+        const path = require('path');
+        const cors = require('cors');
+        const db = require('./db');
+        
+        const app = express();
+        const PORT = process.env.PORT || 10000;
+        const API_KEY = process.env.DOITHE_APIKEY || 'YOUR_API_KEY';
+        
+        app.use(bodyParser.json());
+        app.use(cors({ origin: process.env.ALLOW_ORIGIN || '*' }));
+        
+        app.get('/health', (req, res) => res.json({ ok: true, ts: new Date() }));
+        
+        app.post('/webhook/card', (req, res) => {
+          try {
+            const payload = req.body || {};
+            const required = ['TaskId','Pin','Seri','Hash'];
+            for (const k of required) {
+              if (!payload[k]) {
+                return res.status(400).json({ ok: false, message: `Missing ${k}`});
+              }
+            }
+            const expectedHash = crypto.createHash('md5')
+              .update(String(API_KEY) + String(payload.Pin) + String(payload.Seri))
+              .digest('hex');
+            if (expectedHash !== String(payload.Hash).toLowerCase()) {
+              console.warn('Hash mismatch', { expectedHash, received: payload.Hash });
+              return res.status(403).json({ ok: false, message: 'Hash mismatch' });
+            }
+            db.insert({
+              taskId: payload.TaskId,
+              pin: payload.Pin,
+              seri: payload.Seri,
+              cardValue: payload.CardValue || payload.declared_value || null,
+              success: payload.Success ? 1 : 0,
+              wrongPrice: payload.wrongPrice ? 1 : 0,
+              hash: payload.Hash,
+              requestid: payload.requestid || null,
+              amount: payload.amount || null,
+              declared_value: payload.declared_value || null,
+              raw: JSON.stringify(payload)
+            });
+            console.log('Callback accepted:', { TaskId: payload.TaskId });
+            return res.status(200).json({ ok: true, message: 'Received' });
+          } catch (err) {
+            console.error('Error processing webhook', err);
+            return res.status(500).json({ ok: false, message: 'Server error' });
+          }
+        });
+        
+        // lightweight admin API: list last 100 records (protected by token if needed)
+        app.get('/api/logs', (req, res) => {
+          try {
+            const rows = db.all();
+            res.json({ ok: true, rows });
+          } catch (err) {
+            res.status(500).json({ ok: false, message: 'DB error' });
+          }
+        });
+        
+        app.listen(PORT, () => {
+          console.log(`Callback web listening on port ${PORT}`);
+          console.log(`Make sure DOITHE_APIKEY is set in environment variables.`);
+        });
+    """)
+}
+
+# write files
+for fname, content in files.items():
+    p = os.path.join(root, fname)
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(content)
+
+# create zip
+zip_path = "/mnt/data/doithe-callback-web.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for foldername, subfolders, filenames in os.walk(root):
+        for filename in filenames:
+            filepath = os.path.join(foldername, filename)
+            arcname = os.path.relpath(filepath, start=root)
+            z.write(filepath, arcname)
+
+print("Created zip at:", zip_path)
+
