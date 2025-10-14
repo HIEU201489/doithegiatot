@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Demo Nạp Thẻ - doithegiatot.com API</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:900px; margin:40px auto; padding:0 20px; }
+    label{display:block; margin-top:12px;}
+    input, select { padding:8px; width:100%; box-sizing:border-box; }
+    button { margin-top:12px; padding:10px 14px; }
+    pre { background:#f6f6f6; padding:12px; overflow:auto; }
+    .note{color:#666; font-size:0.9em}
+  </style>
+</head>
+<body>
+  <h1>Demo Nạp Thẻ (doithegiatot.com)</h1>
+  <p class="note">Form này gửi mã thẻ + seri tới <code>process.php</code> để gọi API. Thay <code>config.php</code> bằng API Key thật của bạn.</p>
+
+  <form action="process.php" method="post">
+    <label>Loại thẻ
+      <select name="CardType" required>
+        <option value="1">Viettel (1)</option>
+        <option value="2">MobiFone (2)</option>
+        <option value="3">VinaPhone (3)</option>
+        <option value="14">Zing (14)</option>
+        <option value="15">Gate (15)</option>
+        <option value="16">Vietnamobile (16)</option>
+        <option value="23">Vcoin (23)</option>
+      </select>
+    </label>
+
+    <label>Mệnh giá (ví dụ: 10000)
+      <input name="CardValue" type="number" required min="1000" step="1000">
+    </label>
+
+    <label>Mã thẻ (Pin)
+      <input name="Pin" type="text" required maxlength="50">
+    </label>
+
+    <label>Seri
+      <input name="Seri" type="text" required maxlength="100">
+    </label>
+
+    <label>Request ID (mã đơn của bạn, tùy chọn)
+      <input name="requestid" type="text" maxlength="100">
+    </label>
+
+    <button type="submit">Gửi đổi thẻ</button>
+  </form>
+
+  <h3>Kiểm tra chiết khấu</h3>
+  <p><a href="cardrate.php" target="_blank">Xem chiết khấu (cardrate.php)</a></p>
+
+  <h3>Kết quả API</h3>
+  <p>Kết quả sẽ hiển thị ở <code>process.php</code> sau khi gửi form.</p>
+</body>
+</html>
