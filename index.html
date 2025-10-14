@@ -3,29 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang thử nghiệm</title>
+    <title>Game Nhấn +1</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            text-align: center;
-            padding: 50px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            font-family: 'Arial', sans-serif;
+            user-select: none;
+            overflow: hidden;
         }
+
+        h1 {
+            font-size: 3rem;
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        #counter {
+            font-size: 5rem;
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+        }
+
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            background-color: #ffffffcc;
+            color: #ff5e62;
             cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #fff;
+            transform: scale(1.1);
+        }
+
+        .click-effect {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            color: yellow;
+            pointer-events: none;
+            animation: floatUp 0.7s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
         }
     </style>
 </head>
 <body>
-    <h1>Chào mừng đến trang thử nghiệm!</h1>
-    <p>Đây là một trang HTML cơ bản để bạn thử nghiệm.</p>
-    <button onclick="showMessage()">Nhấn vào đây</button>
+    <h1>Nhấn +1 Game</h1>
+    <div id="counter">0</div>
+    <button onclick="resetCounter()">Reset</button>
 
     <script>
-        function showMessage() {
-            alert("Bạn đã nhấn nút thành công!");
+        let count = 0;
+        const counter = document.getElementById('counter');
+
+        // Nhấn anywhere trên màn hình
+        document.body.addEventListener('click', function(e) {
+            // Nếu click vào nút reset thì không +1
+            if (e.target.tagName.toLowerCase() === 'button') return;
+
+            count++;
+            counter.textContent = count;
+
+            // Hiệu ứng +1 ở vị trí click
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.textContent = '+1';
+            effect.style.left = e.clientX + 'px';
+            effect.style.top = e.clientY + 'px';
+            document.body.appendChild(effect);
+
+            setTimeout(() => {
+                effect.remove();
+            }, 700);
+        });
+
+        function resetCounter() {
+            count = 0;
+            counter.textContent = count;
         }
     </script>
 </body>
