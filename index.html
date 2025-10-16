@@ -1,103 +1,103 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Nhấn +1</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-            font-family: 'Arial', sans-serif;
-            user-select: none;
-            overflow: hidden;
-        }
-
-        h1 {
-            font-size: 3rem;
-            color: #fff;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }
-
-        #counter {
-            font-size: 5rem;
-            color: #fff;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            margin-bottom: 40px;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            border: none;
-            border-radius: 10px;
-            background-color: #ffffffcc;
-            color: #ff5e62;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: all 0.2s;
-        }
-
-        button:hover {
-            background-color: #fff;
-            transform: scale(1.1);
-        }
-
-        .click-effect {
-            position: absolute;
-            font-size: 2rem;
-            font-weight: bold;
-            color: yellow;
-            pointer-events: none;
-            animation: floatUp 0.7s ease-out forwards;
-        }
-
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mua Thẻ Giá Rẻ - Doithegia</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0088ff, #4adede);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    form {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+      margin-top: 20px;
+    }
+    input, select, button {
+      margin: 8px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 220px;
+    }
+    button {
+      background: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ffe066;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <h1>Nhấn +1 Game</h1>
-    <div id="counter">0</div>
-    <button onclick="resetCounter()">Reset</button>
+  <h1>Mua Thẻ Giá Rẻ - Doithegia</h1>
+  <p>Nhập thông tin thẻ cào để đổi lấy chiết khấu tốt nhất!</p>
+  <form id="buyCardForm">
+    <input type="text" id="apikey" placeholder="2f166b1a3e94e7c89d51c827c3b94bd9" required /><br>
+    <select id="cardType" required>
+      <option value="">-- Chọn loại thẻ --</option>
+      <option value="1">Viettel</option>
+      <option value="2">Mobifone</option>
+      <option value="3">Vinaphone</option>
+      <option value="14">Zing</option>
+      <option value="15">Gate</option>
+      <option value="16">Vietnamobile</option>
+    </select><br>
+    <input type="number" id="cardValue" placeholder="Mệnh giá (vd: 10000)" required /><br>
+    <input type="text" id="seri" placeholder="Số Seri" required /><br>
+    <input type="text" id="pin" placeholder="Mã thẻ cào" required /><br>
+    <button type="submit">Gửi đổi thẻ</button>
+  </form>
 
-    <script>
-        let count = 0;
-        const counter = document.getElementById('counter');
+  <div id="result"></div>
 
-        // Nhấn anywhere trên màn hình
-        document.body.addEventListener('click', function(e) {
-            // Nếu click vào nút reset thì không +1
-            if (e.target.tagName.toLowerCase() === 'button') return;
+  <script>
+    document.getElementById('buyCardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const apiUrl = 'https://doithegiatot.com/api/card';
+      const data = {
+        ApiKey: document.getElementById('apikey').value.trim(),
+        CardType: parseInt(document.getElementById('cardType').value),
+        CardValue: parseInt(document.getElementById('cardValue').value),
+        Seri: document.getElementById('seri').value.trim(),
+        Pin: document.getElementById('pin').value.trim(),
+        requestid: "web_" + Date.now()
+      };
 
-            count++;
-            counter.textContent = count;
-
-            // Hiệu ứng +1 ở vị trí click
-            const effect = document.createElement('div');
-            effect.className = 'click-effect';
-            effect.textContent = '+1';
-            effect.style.left = e.clientX + 'px';
-            effect.style.top = e.clientY + 'px';
-            document.body.appendChild(effect);
-
-            setTimeout(() => {
-                effect.remove();
-            }, 700);
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
         });
-
-        function resetCounter() {
-            count = 0;
-            counter.textContent = count;
-        }
-    </script>
+        const result = await res.json();
+        const box = document.getElementById('result');
+        box.style.display = 'block';
+        box.innerHTML = `
+          <h3>Kết quả</h3>
+          <p><strong>Trạng thái:</strong> ${result.Code === 1 ? "✅ Thành công" : "❌ Thất bại"}</p>
+          <p><strong>Thông báo:</strong> ${result.Message}</p>
+          <p><strong>ID Giao dịch:</strong> ${result.TaskId || "Không có"}</p>
+        `;
+      } catch (err) {
+        alert("Lỗi khi gửi yêu cầu: " + err.message);
+      }
+    });
+  </script>
 </body>
 </html>
